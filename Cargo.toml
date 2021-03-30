@@ -1,0 +1,9 @@
+[package]
+name = "namahage"
+version = "1.0.0-alpha.1"
+authors = ["Daisuke Satoh <daisuke.satoh@lifematics.co.jp>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
