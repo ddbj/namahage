@@ -40,7 +40,7 @@ $ ./target/release/namahage
 ### Build manually with singularity
 
 ```shell
-$ singularity build rust_slim-buster.sif docker-daemon://rust_slim-buster:latest
+$ singularity build rust_slim-buster.sif docker://rust:slim-buster
 $ git clone https://github.com/ddbj/namahage.git
 $ cd namahage
 $ singularity exec <path to rust_slim-buster.sif> cargo build --release
