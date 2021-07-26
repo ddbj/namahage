@@ -46,3 +46,12 @@ $ cd namahage
 $ singularity exec <path to rust_slim-buster.sif> cargo build --release
 $ singularity exec <path to rust_slim-buster.sif> ./target/release/namahage
 ```
+
+### For NIG supercomputer users
+
+```shell
+$ git clone https://github.com/ddbj/namahage.git
+$ cd namahage
+$ singularity exec /lustre6/public/app/namahage/rust_slim-buster.sif cargo build --release
+$ singularity exec /lustre6/public/app/namahage/rust_slim-buster.sif ./target/release/namahage
+```
