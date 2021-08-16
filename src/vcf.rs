@@ -1,1 +1,99 @@
-pub mod reader;
+use std::fmt::{Debug, Display, Formatter};
+use std::fs::File;
+use std::io;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+
+use crate::config::Config;
+use crate::errors::{Error, Result};
+use crate::validator::header::Header;
+use crate::validator::meta_information::MetaInformation;
+use crate::validator::ValidationReport;
+
+#[derive(Debug)]
+pub struct Reader<R> {
+    reader: BufReader<R>,
+}
+
+impl Reader<File> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Reader<File>> {
+        if path.as_ref().exists() {
+            Ok(Reader::new(File::open(path)?))
+        } else {
+            Err(Error::FileNotFoundError(
+                path.as_ref().to_string_lossy().to_string(),
+            ))?
+        }
+    }
+}
+
+const CAPACITY: usize = 10 * 1024;
+
+#[derive(Debug, Clone)]
+pub struct Content(pub usize, pub String);
+
+impl Display for Content {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "L{}: {}", self.0, self.1)
+    }
+}
+
+impl<R: io::Read> Reader<R> {
+    pub fn from_reader(reader: R) -> Result<Reader<R>> {
+        Ok(Reader::new(reader))
+    }
+
+    fn new(reader: R) -> Reader<R> {
+        Reader {
+            reader: BufReader::with_capacity(CAPACITY, reader),
+        }
+    }
+
+    pub fn validate(&mut self, config: &Config) -> ValidationReport {
+        let mut i = 0;
+        let mut buf = Vec::with_capacity(CAPACITY);
+
+        let mut errors: Vec<Error> = Vec::new();
+        let mut meta_information = MetaInformation::new();
+        let mut header = Header::new();
+
+        while self
+            .reader
+            .read_until(b'\n', &mut buf)
+            .expect("Failed to read bytes")
+            != 0
+        {
+            i += 1;
+
+            let str = match String::from_utf8(buf.clone()) {
+                Ok(s) => s,
+                Err(_) => {
+                    errors.push(Error::VCFReadUtf8Error(Content(
+                        i,
+                        String::from_utf8_lossy(buf.as_slice()).to_string(),
+                    )));
+                    continue;
+                }
+            };
+
+            let content = Content(i, str.trim_end().to_owned());
+
+            match &content.1 {
+                str if str.starts_with("##") => meta_information.push(content),
+                str if str.starts_with("#") => header.push(content),
+                _ => {}
+            }
+
+            buf.clear();
+        }
+
+        meta_information.validate(config);
+        header.validate(config);
+
+        ValidationReport {
+            errors,
+            meta_information,
+            header,
+        }
+    }
+}

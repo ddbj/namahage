@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config::{Base, Lang, Message, LANG};
-use crate::validator::meta_information::MetaInformation;
-use crate::validator::{Level, Validate, ValidationResult};
+use crate::config::{Base, Config, Lang};
+use crate::validator::header::Header;
+use crate::validator::{Level, Validate, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -22,38 +22,72 @@ impl Base for HeaderLine {
     }
 }
 
-impl Message for HeaderLine {
-    fn message(lang: &Lang) -> &'static str {
-        match lang {
-            Lang::EN => "",
-            Lang::JA => "ヘッダー行が見つかりません。#から始まるヘッダー行が必要です。",
-        }
-    }
-}
-
 impl Default for HeaderLine {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Error,
-            message: String::from(Self::message(LANG.get_or_init(|| Lang::default()))),
+            message: match Config::language() {
+                Lang::EN => String::from(
+                    "The header line is missing. The line starts with `#` is required.",
+                ),
+                Lang::JA => {
+                    String::from("ヘッダー行が見つかりません。#から始まるヘッダー行が必要です。")
+                }
+            },
         }
     }
 }
 
 impl Validate for HeaderLine {
-    type Item = MetaInformation;
-    type Config = Self;
+    type Item = Header;
 
-    fn validate(&self, _item: &Self::Item) -> ValidationResult {
-        let valid = true;
+    fn validate(&self, item: &Self::Item) -> Option<ValidationError> {
+        if item.contents.len() > 0 {
+            return None;
+        }
 
-        ValidationResult {
+        let context = tera::Context::new();
+
+        Some(ValidationError {
             id: Self::id(),
             name: Self::name(),
             level: self.level,
-            valid,
-            message: "".to_string(),
-        }
+            message: Config::template().render(Self::name(), &context).unwrap(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::vcf::Content;
+
+    use super::*;
+
+    #[test]
+    fn test_valid() {
+        let item = Header {
+            contents: vec![Content(
+                2,
+                String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),
+            )],
+            errors: vec![],
+        };
+
+        let v = HeaderLine::default().validate(&item);
+
+        assert!(v.is_none());
+    }
+
+    #[test]
+    fn test_invalid_missing_header_row() {
+        let item = Header {
+            contents: vec![],
+            errors: vec![],
+        };
+
+        let v = HeaderLine::default().validate(&item);
+
+        assert!(v.is_some());
     }
 }

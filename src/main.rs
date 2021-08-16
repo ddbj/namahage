@@ -4,9 +4,9 @@ use structopt::clap::crate_description;
 use structopt::StructOpt;
 use strum::{EnumString, EnumVariantNames, VariantNames};
 
-use namahage::config::{Config, Lang, LANG};
+use namahage::config::{Config, Lang};
 use namahage::errors::{Error, Result};
-use std::fs::File;
+use namahage::vcf::Reader;
 
 #[derive(EnumString, EnumVariantNames, Debug)]
 #[strum(serialize_all = "lowercase")]
@@ -37,7 +37,7 @@ pub struct Options {
 }
 
 fn main() -> Result<()> {
-    LANG.set(Lang::JA)
+    Config::init_language(Lang::JA)
         .map_err(|lang| Error::CLIError(format!("Failed to set language to {}", lang)))?;
 
     let opts: Options = Options::from_args();
@@ -48,15 +48,17 @@ fn main() -> Result<()> {
     }
 
     let config = match &opts.config {
-        Some(path) => serde_yaml::from_reader(File::open(path)?)?,
+        Some(path) => Config::from_path(path)?,
         None => Config::default(),
     };
 
-    // let validator = Validator::new().configure(config);
-    // let result = validator.execute();
+    if let Some(path) = &opts.input {
+        let mut reader = Reader::from_path(path)?;
 
-    println!("{:?}", &opts);
-    println!("{:#?}", &config);
+        let report = reader.validate(&config);
+
+        println!("{:#?}", report);
+    }
 
     Ok(())
 }

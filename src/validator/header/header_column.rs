@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config::{Base, Lang, Message, LANG};
-use crate::validator::meta_information::MetaInformation;
-use crate::validator::{Level, Validate, ValidationResult};
+use crate::config::{Base, Config, Lang};
+use crate::validator::header::Header;
+use crate::validator::{Level, Validate, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -22,38 +22,100 @@ impl Base for HeaderColumn {
     }
 }
 
-impl Message for HeaderColumn {
-    fn message(lang: &Lang) -> &'static str {
-        match lang {
-            Lang::EN => "",
-            Lang::JA => "ヘッダー行に必要なカラムがありません。[CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO]は必須項目です。",
-        }
-    }
-}
-
 impl Default for HeaderColumn {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Error,
-            message: String::from(Self::message(LANG.get_or_init(|| Lang::default()))),
+            message: match Config::language() {
+                Lang::EN => String::from("The header line names the 8 fixed, mandatory columns. These columns are as follows: {{columns}}."),
+                Lang::JA => {
+                    String::from("ヘッダー行には8つの固定カラム{{columns}}が必須です。")
+                }
+            },
         }
     }
 }
 
 impl Validate for HeaderColumn {
-    type Item = MetaInformation;
-    type Config = Self;
+    type Item = Header;
 
-    fn validate(&self, _item: &Self::Item) -> ValidationResult {
-        let valid = true;
+    fn validate(&self, item: &Self::Item) -> Option<ValidationError> {
+        let expected = vec!["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"];
 
-        ValidationResult {
+        if item.contents.len() == 1 {
+            if let Some(content) = item.contents.get(0) {
+                if let Some(str) = content.1.strip_prefix("#") {
+                    let mut columns = str.split("\t").collect::<Vec<&str>>();
+                    columns.truncate(8);
+
+                    if columns == expected {
+                        return None;
+                    }
+                }
+            }
+        }
+
+        let mut context = tera::Context::new();
+        context.insert("columns", &expected.join(", "));
+
+        Some(ValidationError {
             id: Self::id(),
             name: Self::name(),
             level: self.level,
-            valid,
-            message: "".to_string(),
-        }
+            message: Config::template().render(Self::name(), &context).unwrap(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::vcf::Content;
+
+    use super::*;
+
+    #[test]
+    fn test_valid() {
+        let item = Header {
+            contents: vec![Content(
+                2,
+                String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),
+            )],
+            errors: vec![],
+        };
+
+        let v = HeaderColumn::default().validate(&item);
+
+        assert!(v.is_none());
+    }
+
+    #[test]
+    fn test_invalid_missing_column() {
+        let item = Header {
+            contents: vec![Content(
+                2,
+                String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER"),
+            )],
+            errors: vec![],
+        };
+
+        let v = HeaderColumn::default().validate(&item);
+
+        assert!(v.is_some());
+    }
+
+    #[test]
+    fn test_invalid_invalid_order() {
+        let item = Header {
+            contents: vec![Content(
+                2,
+                String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tINFO\tFILTER"),
+            )],
+            errors: vec![],
+        };
+
+        let v = HeaderColumn::default().validate(&item);
+
+        assert!(v.is_some());
     }
 }

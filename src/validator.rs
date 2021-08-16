@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config;
+use crate::errors::Error;
 
 pub mod header;
 pub mod meta_information;
@@ -23,21 +23,23 @@ impl Default for Level {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct ValidationResult {
+#[derive(Debug)]
+pub struct ValidationError {
     pub id: &'static str,
     pub name: &'static str,
     pub level: Level,
-    pub valid: bool,
     pub message: String,
 }
 
-pub trait Validate
-where
-    Self::Config: config::Base + config::Message,
-{
-    type Item;
-    type Config;
+#[derive(Debug)]
+pub struct ValidationReport {
+    pub errors: Vec<Error>,
+    pub meta_information: meta_information::MetaInformation,
+    pub header: header::Header,
+}
 
-    fn validate(&self, item: &Self::Item) -> ValidationResult;
+pub trait Validate {
+    type Item;
+
+    fn validate(&self, item: &Self::Item) -> Option<ValidationError>;
 }
