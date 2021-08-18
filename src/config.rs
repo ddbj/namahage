@@ -8,7 +8,7 @@ use serde_yaml::Value;
 use tera::Tera;
 
 use crate::errors::Result;
-use crate::validator::{header, meta_information};
+use crate::validator::{global, header, meta_information};
 
 const CONFIG_MESSAGE_KEY: &'static str = "Message";
 
@@ -45,6 +45,8 @@ pub trait Base {
 pub struct Config {
     #[serde(rename = "MetaInformation/FileFormat")]
     pub file_format: meta_information::file_format::FileFormat,
+    #[serde(rename = "MetaInformation/Version")]
+    pub version: meta_information::version::Version,
 
     #[serde(rename = "Header/HeaderLine")]
     pub header_line: header::header_line::HeaderLine,
@@ -52,6 +54,13 @@ pub struct Config {
     pub header_column: header::header_column::HeaderColumn,
     #[serde(rename = "Header/DuplicatedHeader")]
     pub duplicated_header: header::duplicated_header::DuplicatedHeader,
+
+    #[serde(rename = "Global/DataBeforeHeader")]
+    pub data_before_header: global::data_before_header::DataBeforeHeader,
+    #[serde(rename = "Global/BlankLine")]
+    pub blank_line: global::blank_line::BlankLine,
+    #[serde(rename = "Global/EmptyVCF")]
+    pub empty_vcf: global::empty_vcf::EmptyVCF,
 }
 
 impl Config {

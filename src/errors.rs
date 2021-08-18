@@ -1,5 +1,6 @@
-use crate::vcf::Content;
 use thiserror::Error;
+
+use crate::vcf::Content;
 
 pub type Result<T, E = Error> = core::result::Result<T, E>;
 

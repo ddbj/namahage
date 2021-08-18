@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
 use crate::validator::header::Header;
-use crate::validator::{Level, Validate, ValidationError};
+use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -37,10 +37,12 @@ impl Default for HeaderColumn {
     }
 }
 
-impl Validate for HeaderColumn {
-    type Item = Header;
+impl HeaderColumn {
+    pub fn validate(&self, item: &Header) -> Option<ValidationError> {
+        if !self.enabled {
+            return None;
+        }
 
-    fn validate(&self, item: &Self::Item) -> Option<ValidationError> {
         let expected = vec!["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"];
 
         if item.contents.len() == 1 {
@@ -77,6 +79,8 @@ mod tests {
     #[test]
     fn test_valid() {
         let item = Header {
+            config: &Config::default(),
+            validated: false,
             contents: vec![Content(
                 2,
                 String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),
@@ -92,6 +96,8 @@ mod tests {
     #[test]
     fn test_invalid_missing_column() {
         let item = Header {
+            config: &Config::default(),
+            validated: false,
             contents: vec![Content(
                 2,
                 String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER"),
@@ -107,6 +113,8 @@ mod tests {
     #[test]
     fn test_invalid_invalid_order() {
         let item = Header {
+            config: &Config::default(),
+            validated: false,
             contents: vec![Content(
                 2,
                 String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tINFO\tFILTER"),

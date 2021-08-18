@@ -1,51 +1,47 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::header::Header;
+use crate::validator::global::Global;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct HeaderLine {
+pub struct EmptyVCF {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
 }
 
-impl Base for HeaderLine {
+impl Base for EmptyVCF {
     fn id() -> &'static str {
-        "JV_VR0002"
+        "JV_VR0007"
     }
 
     fn name() -> &'static str {
-        "Header/HeaderLine"
+        "Global/EmptyVCF"
     }
 }
 
-impl Default for HeaderLine {
+impl Default for EmptyVCF {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Error,
             message: match Config::language() {
-                Lang::EN => String::from(
-                    "The header line is missing. The line starts with `#` is required.",
-                ),
-                Lang::JA => {
-                    String::from("ヘッダー行が見つかりません。#から始まるヘッダー行が必要です。")
-                }
+                Lang::EN => String::from("No records found in VCF."),
+                Lang::JA => String::from("VCFにレコードが存在しません。"),
             },
         }
     }
 }
 
-impl HeaderLine {
-    pub fn validate(&self, item: &Header) -> Option<ValidationError> {
+impl EmptyVCF {
+    pub fn validate(&self, item: &Global) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
-        if item.contents.len() > 0 {
+        if item.count > 0 {
             return None;
         }
 
@@ -62,37 +58,40 @@ impl HeaderLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::vcf::Content;
+    use std::collections::HashMap;
 
     use super::*;
 
     #[test]
     fn test_valid() {
-        let item = Header {
+        let item = Global {
             config: &Config::default(),
             validated: false,
-            contents: vec![Content(
-                2,
-                String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),
-            )],
-            errors: vec![],
+            header: true,
+            count: 1,
+            current_content: None,
+            previous_content: None,
+            errors: HashMap::new(),
         };
 
-        let v = HeaderLine::default().validate(&item);
+        let v = EmptyVCF::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_missing_header_row() {
-        let item = Header {
+    fn test_invalid_data_before_header() {
+        let item = Global {
             config: &Config::default(),
             validated: false,
-            contents: vec![],
-            errors: vec![],
+            header: true,
+            count: 0,
+            current_content: None,
+            previous_content: None,
+            errors: HashMap::new(),
         };
 
-        let v = HeaderLine::default().validate(&item);
+        let v = EmptyVCF::default().validate(&item);
 
         assert!(v.is_some());
     }

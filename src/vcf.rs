@@ -6,6 +6,7 @@ use std::path::Path;
 
 use crate::config::Config;
 use crate::errors::{Error, Result};
+use crate::validator::global::Global;
 use crate::validator::header::Header;
 use crate::validator::meta_information::MetaInformation;
 use crate::validator::ValidationReport;
@@ -29,7 +30,7 @@ impl Reader<File> {
 
 const CAPACITY: usize = 10 * 1024;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Content(pub usize, pub String);
 
 impl Display for Content {
@@ -49,13 +50,14 @@ impl<R: io::Read> Reader<R> {
         }
     }
 
-    pub fn validate(&mut self, config: &Config) -> ValidationReport {
+    pub fn validate<'a>(&mut self, config: &'a Config) -> ValidationReport<'a> {
         let mut i = 0;
         let mut buf = Vec::with_capacity(CAPACITY);
 
         let mut errors: Vec<Error> = Vec::new();
-        let mut meta_information = MetaInformation::new();
-        let mut header = Header::new();
+        let mut meta_information = MetaInformation::new(config);
+        let mut header = Header::new(config);
+        let mut global = Global::new(config);
 
         while self
             .reader
@@ -78,17 +80,19 @@ impl<R: io::Read> Reader<R> {
 
             let content = Content(i, str.trim_end().to_owned());
 
+            global.push(&content);
+
             match &content.1 {
-                str if str.starts_with("##") => meta_information.push(content),
-                str if str.starts_with("#") => header.push(content),
+                str if str.starts_with("##") => meta_information.push(&content),
+                str if str.starts_with("#") => header.push(&content),
                 _ => {}
             }
 
             buf.clear();
         }
 
-        meta_information.validate(config);
-        header.validate(config);
+        meta_information.validate();
+        header.validate();
 
         ValidationReport {
             errors,

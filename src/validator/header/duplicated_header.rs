@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
 use crate::validator::header::Header;
-use crate::validator::{Level, Validate, ValidationError};
+use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -37,10 +37,12 @@ impl Default for DuplicatedHeader {
     }
 }
 
-impl Validate for DuplicatedHeader {
-    type Item = Header;
+impl DuplicatedHeader {
+    pub fn validate(&self, item: &Header) -> Option<ValidationError> {
+        if !self.enabled {
+            return None;
+        }
 
-    fn validate(&self, item: &Self::Item) -> Option<ValidationError> {
         if item.contents.len() == 1 {
             return None;
         }
@@ -65,6 +67,8 @@ mod tests {
     #[test]
     fn test_valid() {
         let item = Header {
+            config: &Config::default(),
+            validated: false,
             contents: vec![Content(
                 2,
                 String::from("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),
@@ -80,6 +84,8 @@ mod tests {
     #[test]
     fn test_invalid_duplicated_header() {
         let item = Header {
+            config: &Config::default(),
+            validated: false,
             contents: vec![
                 Content(
                     2,
