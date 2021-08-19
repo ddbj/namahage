@@ -3,7 +3,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ impl Base for MismatchReferenceBase {
     }
 
     fn name() -> &'static str {
-        "Record/MismatchReferenceBase"
+        "Data/MismatchReferenceBase"
     }
 }
 
@@ -42,7 +42,7 @@ impl Default for MismatchReferenceBase {
 }
 
 impl MismatchReferenceBase {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn test_valid() {
         let faidx = open_faidx();
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: Some(&faidx),
             validated: false,
@@ -135,7 +135,7 @@ mod tests {
 
         assert!(v.is_none());
 
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: Some(&faidx),
             validated: false,
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn test_invalid_reference_differs_from_fasta() {
         let faidx = open_faidx();
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: Some(&faidx),
             validated: false,

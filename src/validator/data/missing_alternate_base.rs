@@ -1,55 +1,62 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct IdenticalBases {
+pub struct MissingAlternateBase {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
+    pub disallowed: Vec<String>,
 }
 
-impl Base for IdenticalBases {
+impl Base for MissingAlternateBase {
     fn id() -> &'static str {
-        "JV_VR0027"
+        "JV_VR0035"
     }
 
     fn name() -> &'static str {
-        "Record/IdenticalBases"
+        "Data/MissingAlternateBase"
     }
 }
 
-impl Default for IdenticalBases {
+impl Default for MissingAlternateBase {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
-                Lang::EN => {
-                    String::from("Reference base(s) and alternative base(s) are identical.")
+                Lang::EN => String::from(
+                    "The alternate sequence is missing. Refrain from using {{disallowed}}.",
+                ),
+                Lang::JA => {
+                    String::from("ALTに塩基が指定されていません。{{disallowed}}は使用できません。")
                 }
-                Lang::JA => String::from("REFとALTの塩基が同一です。"),
             },
+            disallowed: vec![".".to_owned(), "-".to_owned()],
         }
     }
 }
 
-impl IdenticalBases {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl MissingAlternateBase {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
         if let Some(record) = &item.current_record {
-            if record.get(3) != record.get(4) {
-                return None;
+            if let Some(alternate) = record.get(4) {
+                if !self.disallowed.iter().any(|str| alternate.contains(str)) {
+                    return None;
+                }
             }
         }
 
-        let context = tera::Context::new();
+        let mut context = tera::Context::new();
+        context.insert("disallowed", &self.disallowed.join(", "));
 
         Some(ValidationError {
             id: Self::id(),
@@ -68,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -88,14 +95,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = IdenticalBases::default().validate(&item);
+        let v = MissingAlternateBase::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_ref_and_alt_are_same() {
-        let item = Record {
+    fn test_invalid_alt_is_dot() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -106,7 +113,7 @@ mod tests {
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
                 "T".to_owned(),
-                "T".to_owned(),
+                ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -115,7 +122,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = IdenticalBases::default().validate(&item);
+        let v = MissingAlternateBase::default().validate(&item);
 
         assert!(v.is_some());
     }

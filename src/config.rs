@@ -8,7 +8,7 @@ use serde_yaml::Value;
 use tera::Tera;
 
 use crate::errors::Result;
-use crate::validator::{global, header, meta_information, record};
+use crate::validator::{data, global, header, meta_information};
 
 const CONFIG_MESSAGE_KEY: &'static str = "Message";
 
@@ -59,34 +59,34 @@ pub struct Config {
     #[serde(rename = "Global/EmptyVCF")]
     pub empty_vcf: global::empty_vcf::EmptyVCF,
 
-    #[serde(rename = "Record/AllowedAlternateBase")]
-    pub allowed_alternate_base: record::allowed_alternate_base::AllowedAlternateBase,
-    #[serde(rename = "Record/AllowedReferenceBase")]
-    pub allowed_reference_base: record::allowed_reference_base::AllowedReferenceBase,
-    #[serde(rename = "Record/AmbiguousAlternateBase")]
-    pub ambiguous_alternate_base: record::ambiguous_alternate_base::AmbiguousAlternateBase,
-    #[serde(rename = "Record/AmbiguousReferenceBase")]
-    pub ambiguous_reference_base: record::ambiguous_reference_base::AmbiguousReferenceBase,
-    #[serde(rename = "Record/DeletionLength")]
-    pub deletion_length: record::deletion_length::DeletionLength,
-    #[serde(rename = "Record/DiscontiguousChromosome")]
-    pub discontiguous_chromosome: record::discontiguous_chromosome::DiscontiguousChromosome,
-    #[serde(rename = "Record/IdenticalBases")]
-    pub identical_bases: record::identical_bases::IdenticalBases,
-    #[serde(rename = "Record/InsertionLength")]
-    pub insertion_length: record::insertion_length::InsertionLength,
-    #[serde(rename = "Record/MismatchReferenceBase")]
-    pub mismatch_reference_base: record::mismatch_reference_base::MismatchReferenceBase,
-    #[serde(rename = "Record/MissingAlternateBase")]
-    pub missing_alternate_base: record::missing_alternate_base::MissingAlternateBase,
-    #[serde(rename = "Record/MissingReferenceBase")]
-    pub missing_reference_base: record::missing_reference_base::MissingReferenceBase,
-    #[serde(rename = "Record/MultipleAlternateAlleles")]
-    pub multiple_alternate_alleles: record::multiple_alternate_alleles::MultipleAlternateAlleles,
-    #[serde(rename = "Record/PositionFormat")]
-    pub position_format: record::position_format::PositionFormat,
-    #[serde(rename = "Record/UnsortedPosition")]
-    pub unsorted_position: record::unsorted_position::UnsortedPosition,
+    #[serde(rename = "Data/AllowedAlternateBase")]
+    pub allowed_alternate_base: data::allowed_alternate_base::AllowedAlternateBase,
+    #[serde(rename = "Data/AllowedReferenceBase")]
+    pub allowed_reference_base: data::allowed_reference_base::AllowedReferenceBase,
+    #[serde(rename = "Data/AmbiguousAlternateBase")]
+    pub ambiguous_alternate_base: data::ambiguous_alternate_base::AmbiguousAlternateBase,
+    #[serde(rename = "Data/AmbiguousReferenceBase")]
+    pub ambiguous_reference_base: data::ambiguous_reference_base::AmbiguousReferenceBase,
+    #[serde(rename = "Data/DeletionLength")]
+    pub deletion_length: data::deletion_length::DeletionLength,
+    #[serde(rename = "Data/DiscontiguousChromosome")]
+    pub discontiguous_chromosome: data::discontiguous_chromosome::DiscontiguousChromosome,
+    #[serde(rename = "Data/IdenticalBases")]
+    pub identical_bases: data::identical_bases::IdenticalBases,
+    #[serde(rename = "Data/InsertionLength")]
+    pub insertion_length: data::insertion_length::InsertionLength,
+    #[serde(rename = "Data/MismatchReferenceBase")]
+    pub mismatch_reference_base: data::mismatch_reference_base::MismatchReferenceBase,
+    #[serde(rename = "Data/MissingAlternateBase")]
+    pub missing_alternate_base: data::missing_alternate_base::MissingAlternateBase,
+    #[serde(rename = "Data/MissingReferenceBase")]
+    pub missing_reference_base: data::missing_reference_base::MissingReferenceBase,
+    #[serde(rename = "Data/MultipleAlternateAlleles")]
+    pub multiple_alternate_alleles: data::multiple_alternate_alleles::MultipleAlternateAlleles,
+    #[serde(rename = "Data/PositionFormat")]
+    pub position_format: data::position_format::PositionFormat,
+    #[serde(rename = "Data/UnsortedPosition")]
+    pub unsorted_position: data::unsorted_position::UnsortedPosition,
 }
 
 static LANG: OnceCell<Lang> = OnceCell::new();

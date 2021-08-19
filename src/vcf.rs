@@ -8,10 +8,10 @@ use rust_htslib;
 
 use crate::config::Config;
 use crate::errors::{Error, Result};
+use crate::validator::data::Data;
 use crate::validator::global::Global;
 use crate::validator::header::Header;
 use crate::validator::meta_information::MetaInformation;
-use crate::validator::record::Record;
 use crate::validator::ValidationReport;
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ impl<R: io::Read> Reader<R> {
         let mut meta_information = MetaInformation::new(config);
         let mut header = Header::new(config);
         let mut global = Global::new(config);
-        let mut record = Record::new(config, self.faidx.as_ref());
+        let mut record = Data::new(config, self.faidx.as_ref());
 
         while self
             .reader

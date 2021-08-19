@@ -22,7 +22,7 @@ pub mod position_format;
 pub mod unsorted_position;
 
 #[derive(Debug)]
-pub struct Record<'a> {
+pub struct Data<'a> {
     config: &'a Config,
     faidx: Option<&'a rust_htslib::faidx::Reader>,
     validated: bool,
@@ -37,9 +37,9 @@ fn regex_nucleotide() -> Regex {
     Regex::new(r"^(?i)[ACGTURYSWKMBDHVN]*").unwrap()
 }
 
-impl<'a> Record<'a> {
+impl<'a> Data<'a> {
     pub fn new(config: &'a Config, faidx: Option<&'a rust_htslib::faidx::Reader>) -> Self {
-        Record {
+        Data {
             config,
             faidx,
             validated: false,

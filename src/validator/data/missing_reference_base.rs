@@ -1,73 +1,62 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct InsertionLength {
+pub struct MissingReferenceBase {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
-    pub max: usize,
+    pub disallowed: Vec<String>,
 }
 
-impl Base for InsertionLength {
+impl Base for MissingReferenceBase {
     fn id() -> &'static str {
-        "JV_VR0031"
+        "JV_VR0029"
     }
 
     fn name() -> &'static str {
-        "Record/InsertionLength"
+        "Data/MissingReferenceBase"
     }
 }
 
-impl Default for InsertionLength {
+impl Default for MissingReferenceBase {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => String::from(
-                    "The length of the insertion exceeds the allowed value. Maximum of length is {{max}}.",
+                    "The reference sequence is missing. Refrain from using {{disallowed}}.",
                 ),
                 Lang::JA => {
-                    String::from("挿入される塩基の長さが許容値を超えています。上限は{{max}}です。")
+                    String::from("REFに塩基が指定されていません。{{disallowed}}は使用できません。")
                 }
             },
-            max: 50,
+            disallowed: vec![".".to_owned(), "-".to_owned()],
         }
     }
 }
 
-impl InsertionLength {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl MissingReferenceBase {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
-        let re = super::regex_nucleotide();
-
         if let Some(record) = &item.current_record {
-            if let (Some(reference), Some(alternate)) = (record.get(3), record.get(4)) {
-                let ref_len = match re.captures(reference) {
-                    Some(cap) => cap[0].len(),
-                    None => 0,
-                };
-                let alt_len = match re.captures(alternate) {
-                    Some(cap) => cap[0].len(),
-                    None => 0,
-                };
-
-                if (alt_len as i32) - (ref_len as i32) < (self.max as i32) {
+            if let Some(reference) = record.get(3) {
+                if !self.disallowed.iter().any(|str| reference.contains(str)) {
                     return None;
                 }
             }
         }
 
         let mut context = tera::Context::new();
-        context.insert("max", &self.max);
+        context.insert("disallowed", &self.disallowed.join(", "));
 
         Some(ValidationError {
             id: Self::id(),
@@ -85,8 +74,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_valid_length_of_insertion_is_within_limit() {
-        let item = Record {
+    fn test_valid() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -97,7 +86,7 @@ mod tests {
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
                 "T".to_owned(),
-                std::iter::repeat("T").take(50).collect::<String>(),
+                "A".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -106,14 +95,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = InsertionLength::default().validate(&item);
+        let v = MissingReferenceBase::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_length_of_insertion_is_over_limit() {
-        let item = Record {
+    fn test_invalid_ref_is_dot() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -123,8 +112,8 @@ mod tests {
                 "NC_000001.10".to_owned(),
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
-                "T".to_owned(),
-                std::iter::repeat("T").take(51).collect::<String>(),
+                ".".to_owned(),
+                "A".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -133,7 +122,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = InsertionLength::default().validate(&item);
+        let v = MissingReferenceBase::default().validate(&item);
 
         assert!(v.is_some());
     }

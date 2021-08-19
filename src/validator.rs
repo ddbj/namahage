@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::Error;
 
+pub mod data;
 pub mod global;
 pub mod header;
 pub mod meta_information;
-pub mod record;
 
 /// Failure level for validators.
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
@@ -39,5 +39,5 @@ pub struct ValidationReport<'a> {
     pub global: global::Global<'a>,
     pub meta_information: meta_information::MetaInformation<'a>,
     pub header: header::Header<'a>,
-    pub record: record::Record<'a>,
+    pub record: data::Data<'a>,
 }

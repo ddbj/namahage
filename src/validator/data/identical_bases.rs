@@ -1,51 +1,51 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct MultipleAlternateAlleles {
+pub struct IdenticalBases {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
 }
 
-impl Base for MultipleAlternateAlleles {
+impl Base for IdenticalBases {
     fn id() -> &'static str {
-        "JV_VR0038"
+        "JV_VR0027"
     }
 
     fn name() -> &'static str {
-        "Record/MultipleAlternateAlleles"
+        "Data/IdenticalBases"
     }
 }
 
-impl Default for MultipleAlternateAlleles {
+impl Default for IdenticalBases {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
-                Lang::EN => String::from("The alternate sequence contains multiple variants."),
-                Lang::JA => String::from("ALTに複数の変異が含まれます。"),
+                Lang::EN => {
+                    String::from("Reference base(s) and alternative base(s) are identical.")
+                }
+                Lang::JA => String::from("REFとALTの塩基が同一です。"),
             },
         }
     }
 }
 
-impl MultipleAlternateAlleles {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl IdenticalBases {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
         if let Some(record) = &item.current_record {
-            if let Some(alternate) = record.get(4) {
-                if !alternate.contains(",") {
-                    return None;
-                }
+            if record.get(3) != record.get(4) {
+                return None;
             }
         }
 
@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -88,14 +88,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = MultipleAlternateAlleles::default().validate(&item);
+        let v = IdenticalBases::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_alt_is_multi_allelic() {
-        let item = Record {
+    fn test_invalid_ref_and_alt_are_same() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -106,7 +106,7 @@ mod tests {
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
                 "T".to_owned(),
-                "A,C".to_owned(),
+                "T".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -115,7 +115,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = MultipleAlternateAlleles::default().validate(&item);
+        let v = IdenticalBases::default().validate(&item);
 
         assert!(v.is_some());
     }

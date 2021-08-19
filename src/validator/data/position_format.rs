@@ -1,74 +1,57 @@
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct AmbiguousReferenceBase {
+pub struct PositionFormat {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
-    pub disallowed: Vec<String>,
 }
 
-impl Base for AmbiguousReferenceBase {
+impl Base for PositionFormat {
     fn id() -> &'static str {
-        "JV_VR0028"
+        "JV_VR0024"
     }
 
     fn name() -> &'static str {
-        "Record/AmbiguousReferenceBase"
+        "Data/PositionFormat"
     }
 }
 
-impl Default for AmbiguousReferenceBase {
+impl Default for PositionFormat {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
-                Lang::EN => String::from(
-                    "The reference sequence contains IUPAC ambiguity codes. Refrain from using {{disallowed}}.",
-                ),
-                Lang::JA => String::from(
-                    "REFに曖昧な塩基が含まれています。{{disallowed}}は使用できません。",
-                ),
+                Lang::EN => String::from("POS should be a number."),
+                Lang::JA => String::from("POSは数値でなければなりません。"),
             },
-            disallowed: vec![
-                "R".to_owned(),
-                "Y".to_owned(),
-                "S".to_owned(),
-                "W".to_owned(),
-                "K".to_owned(),
-                "M".to_owned(),
-                "B".to_owned(),
-                "D".to_owned(),
-                "H".to_owned(),
-                "V".to_owned(),
-                "N".to_owned(),
-            ],
         }
     }
 }
 
-impl AmbiguousReferenceBase {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl PositionFormat {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
         if let Some(record) = &item.current_record {
-            if let Some(reference) = record.get(3) {
-                if !self.disallowed.iter().any(|str| reference.contains(str)) {
+            if let Some(str) = record.get(1) {
+                if usize::from_str(str).is_ok() {
                     return None;
                 }
             }
         }
 
-        let mut context = tera::Context::new();
-        context.insert("disallowed", &self.disallowed.join(", "));
+        let context = tera::Context::new();
 
         Some(ValidationError {
             id: Self::id(),
@@ -87,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -107,14 +90,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = AmbiguousReferenceBase::default().validate(&item);
+        let v = PositionFormat::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_ref_contains_n() {
-        let item = Record {
+    fn test_invalid_data_before_header() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -122,9 +105,9 @@ mod tests {
             chromosomes: HashSet::new(),
             current_record: Some(vec![
                 "NC_000001.10".to_owned(),
-                "10001".to_owned(),
+                "".to_owned(),
                 "rs1570391677".to_owned(),
-                "N".to_owned(),
+                "T".to_owned(),
                 "A".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -134,7 +117,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = AmbiguousReferenceBase::default().validate(&item);
+        let v = PositionFormat::default().validate(&item);
 
         assert!(v.is_some());
     }

@@ -3,7 +3,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ impl Base for UnsortedPosition {
     }
 
     fn name() -> &'static str {
-        "Record/UnsortedPosition"
+        "Data/UnsortedPosition"
     }
 }
 
@@ -38,7 +38,7 @@ impl Default for UnsortedPosition {
 }
 
 impl UnsortedPosition {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_valid_first_record() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_invalid_unsorted_position() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,

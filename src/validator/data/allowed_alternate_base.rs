@@ -1,74 +1,71 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct AmbiguousAlternateBase {
+pub struct AllowedAlternateBase {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
-    pub disallowed: Vec<String>,
+    pub allowed: Vec<String>,
 }
 
-impl Base for AmbiguousAlternateBase {
+impl Base for AllowedAlternateBase {
     fn id() -> &'static str {
-        "JV_VR0034"
+        "JV_VR0036"
     }
 
     fn name() -> &'static str {
-        "Record/AmbiguousAlternateBase"
+        "Data/AllowedAlternateBase"
     }
 }
 
-impl Default for AmbiguousAlternateBase {
+impl Default for AllowedAlternateBase {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => String::from(
-                    "The alternate sequence contains IUPAC ambiguity codes. Refrain from using {{disallowed}}.",
+                    "The alternate sequence contains characters not allowed. Available characters are {{allowed}}.",
                 ),
                 Lang::JA => String::from(
-                    "ALTに曖昧な塩基が含まれています。{{disallowed}}は使用できません。",
+                    "ALTに使用できない文字が含まれます。使用できる文字は{{allowed}}です。",
                 ),
             },
-            disallowed: vec![
-                "R".to_owned(),
-                "Y".to_owned(),
-                "S".to_owned(),
-                "W".to_owned(),
-                "K".to_owned(),
-                "M".to_owned(),
-                "B".to_owned(),
-                "D".to_owned(),
-                "H".to_owned(),
-                "V".to_owned(),
-                "N".to_owned(),
+            allowed: vec![
+                "A".to_owned(),
+                "C".to_owned(),
+                "G".to_owned(),
+                "T".to_owned(),
+                "U".to_owned(),
             ],
         }
     }
 }
 
-impl AmbiguousAlternateBase {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl AllowedAlternateBase {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
         if let Some(record) = &item.current_record {
             if let Some(alternate) = record.get(4) {
-                if !self.disallowed.iter().any(|str| alternate.contains(str)) {
+                if alternate
+                    .split(",")
+                    .all(|alt| alt.chars().all(|c| self.allowed.contains(&c.to_string())))
+                {
                     return None;
                 }
             }
         }
 
         let mut context = tera::Context::new();
-        context.insert("disallowed", &self.disallowed.join(", "));
+        context.insert("allowed", &self.allowed.join(", "));
 
         Some(ValidationError {
             id: Self::id(),
@@ -87,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -98,7 +95,7 @@ mod tests {
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
                 "T".to_owned(),
-                "A".to_owned(),
+                "ACGTU".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -107,14 +104,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = AmbiguousAlternateBase::default().validate(&item);
+        let v = AllowedAlternateBase::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
     fn test_invalid_alt_contains_n() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -125,7 +122,7 @@ mod tests {
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
                 "T".to_owned(),
-                "N".to_owned(),
+                "ACGTUN".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -134,7 +131,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = AmbiguousAlternateBase::default().validate(&item);
+        let v = AllowedAlternateBase::default().validate(&item);
 
         assert!(v.is_some());
     }

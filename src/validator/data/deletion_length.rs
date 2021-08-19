@@ -1,62 +1,73 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct MissingAlternateBase {
+pub struct DeletionLength {
     pub enabled: bool,
     pub level: Level,
     pub message: String,
-    pub disallowed: Vec<String>,
+    pub max: usize,
 }
 
-impl Base for MissingAlternateBase {
+impl Base for DeletionLength {
     fn id() -> &'static str {
-        "JV_VR0035"
+        "JV_VR0037"
     }
 
     fn name() -> &'static str {
-        "Record/MissingAlternateBase"
+        "Data/DeletionLength"
     }
 }
 
-impl Default for MissingAlternateBase {
+impl Default for DeletionLength {
     fn default() -> Self {
         Self {
             enabled: true,
             level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => String::from(
-                    "The alternate sequence is missing. Refrain from using {{disallowed}}.",
+                    "The length of the deletion exceeds the allowed value. Maximum of length is {{max}}.",
                 ),
                 Lang::JA => {
-                    String::from("ALTに塩基が指定されていません。{{disallowed}}は使用できません。")
+                    String::from("欠損される塩基の長さが許容値を超えています。上限は{{max}}です。")
                 }
             },
-            disallowed: vec![".".to_owned(), "-".to_owned()],
+            max: 50,
         }
     }
 }
 
-impl MissingAlternateBase {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+impl DeletionLength {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
 
+        let re = super::regex_nucleotide();
+
         if let Some(record) = &item.current_record {
-            if let Some(alternate) = record.get(4) {
-                if !self.disallowed.iter().any(|str| alternate.contains(str)) {
+            if let (Some(reference), Some(alternate)) = (record.get(3), record.get(4)) {
+                let ref_len = match re.captures(reference) {
+                    Some(cap) => cap[0].len(),
+                    None => 0,
+                };
+                let alt_len = match re.captures(alternate) {
+                    Some(cap) => cap[0].len(),
+                    None => 0,
+                };
+
+                if (ref_len as i32) - (alt_len as i32) < (self.max as i32) {
                     return None;
                 }
             }
         }
 
         let mut context = tera::Context::new();
-        context.insert("disallowed", &self.disallowed.join(", "));
+        context.insert("max", &self.max);
 
         Some(ValidationError {
             id: Self::id(),
@@ -74,8 +85,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_valid() {
-        let item = Record {
+    fn test_valid_length_of_deletion_is_within_limit() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -85,8 +96,8 @@ mod tests {
                 "NC_000001.10".to_owned(),
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
+                std::iter::repeat("T").take(50).collect::<String>(),
                 "T".to_owned(),
-                "A".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -95,14 +106,14 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = MissingAlternateBase::default().validate(&item);
+        let v = DeletionLength::default().validate(&item);
 
         assert!(v.is_none());
     }
 
     #[test]
-    fn test_invalid_alt_is_dot() {
-        let item = Record {
+    fn test_invalid_length_of_deletion_is_over_limit() {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -112,8 +123,8 @@ mod tests {
                 "NC_000001.10".to_owned(),
                 "10001".to_owned(),
                 "rs1570391677".to_owned(),
+                std::iter::repeat("T").take(51).collect::<String>(),
                 "T".to_owned(),
-                ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
                 ".".to_owned(),
@@ -122,7 +133,7 @@ mod tests {
             errors: HashMap::default(),
         };
 
-        let v = MissingAlternateBase::default().validate(&item);
+        let v = DeletionLength::default().validate(&item);
 
         assert!(v.is_some());
     }

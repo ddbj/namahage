@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Base, Config, Lang};
-use crate::validator::record::Record;
+use crate::validator::data::Data;
 use crate::validator::{Level, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,7 +18,7 @@ impl Base for DiscontiguousChromosome {
     }
 
     fn name() -> &'static str {
-        "Record/DiscontiguousChromosome"
+        "Data/DiscontiguousChromosome"
     }
 }
 
@@ -36,7 +36,7 @@ impl Default for DiscontiguousChromosome {
 }
 
 impl DiscontiguousChromosome {
-    pub fn validate(&self, item: &Record) -> Option<ValidationError> {
+    pub fn validate(&self, item: &Data) -> Option<ValidationError> {
         if !self.enabled {
             return None;
         }
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_valid() {
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -104,7 +104,7 @@ mod tests {
         let mut chromosomes = HashSet::new();
         chromosomes.insert("NC_000001.10".to_owned());
 
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
@@ -144,7 +144,7 @@ mod tests {
         chromosomes.insert("NC_000001.10".to_owned());
         chromosomes.insert("NC_000002.11".to_owned());
 
-        let item = Record {
+        let item = Data {
             config: &Config::default(),
             faidx: None,
             validated: false,
