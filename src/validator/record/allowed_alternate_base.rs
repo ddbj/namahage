@@ -56,8 +56,8 @@ impl AllowedAlternateBase {
         if let Some(record) = &item.current_record {
             if let Some(alternate) = record.get(4) {
                 if alternate
-                    .chars()
-                    .all(|c| self.allowed.contains(&c.to_string()))
+                    .split(",")
+                    .all(|alt| alt.chars().all(|c| self.allowed.contains(&c.to_string())))
                 {
                     return None;
                 }

@@ -48,6 +48,14 @@ impl<'a> Global<'a> {
             self.push_or_insert(Some(content.to_owned()), e);
         }
 
+        if self.header && !content.1.starts_with("#") {
+            self.count += 1;
+        }
+
+        if !content.1.starts_with("##") && content.1.starts_with("#") {
+            self.header = true;
+        }
+
         self.previous_content = self.current_content.to_owned();
     }
 
