@@ -5,6 +5,7 @@ use crate::errors::Error;
 pub mod global;
 pub mod header;
 pub mod meta_information;
+pub mod record;
 
 /// Failure level for validators.
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
@@ -35,8 +36,8 @@ pub struct ValidationError {
 #[derive(Debug)]
 pub struct ValidationReport<'a> {
     pub errors: Vec<Error>,
+    pub global: global::Global<'a>,
     pub meta_information: meta_information::MetaInformation<'a>,
     pub header: header::Header<'a>,
-    // data: ((), &'a ValidationResult),
-    // record: Vec<((), &'a ValidationResult)>,
+    pub record: record::Record<'a>,
 }

@@ -31,6 +31,10 @@ pub struct Options {
     #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
+    /// Path to faidx file
+    #[structopt(long, parse(from_os_str))]
+    faidx: Option<PathBuf>,
+
     /// File to process
     #[structopt(parse(from_os_str))]
     input: Option<PathBuf>,
@@ -54,6 +58,10 @@ fn main() -> Result<()> {
 
     if let Some(path) = &opts.input {
         let mut reader = Reader::from_path(path)?;
+
+        if let Some(faidx) = opts.faidx {
+            reader.set_faidx(faidx)?;
+        }
 
         let report = reader.validate(&config);
 

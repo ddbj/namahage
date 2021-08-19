@@ -4,16 +4,20 @@ use std::io;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+use rust_htslib;
+
 use crate::config::Config;
 use crate::errors::{Error, Result};
 use crate::validator::global::Global;
 use crate::validator::header::Header;
 use crate::validator::meta_information::MetaInformation;
+use crate::validator::record::Record;
 use crate::validator::ValidationReport;
 
 #[derive(Debug)]
 pub struct Reader<R> {
     reader: BufReader<R>,
+    faidx: Option<rust_htslib::faidx::Reader>,
 }
 
 impl Reader<File> {
@@ -47,10 +51,20 @@ impl<R: io::Read> Reader<R> {
     fn new(reader: R) -> Reader<R> {
         Reader {
             reader: BufReader::with_capacity(CAPACITY, reader),
+            faidx: None,
         }
     }
 
-    pub fn validate<'a>(&mut self, config: &'a Config) -> ValidationReport<'a> {
+    pub fn set_faidx<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.faidx = Some(rust_htslib::faidx::Reader::from_path(path)?);
+        Ok(())
+    }
+
+    pub fn faidx(&self) -> Option<&rust_htslib::faidx::Reader> {
+        self.faidx.as_ref()
+    }
+
+    pub fn validate<'a>(&'a mut self, config: &'a Config) -> ValidationReport<'a> {
         let mut i = 0;
         let mut buf = Vec::with_capacity(CAPACITY);
 
@@ -58,6 +72,7 @@ impl<R: io::Read> Reader<R> {
         let mut meta_information = MetaInformation::new(config);
         let mut header = Header::new(config);
         let mut global = Global::new(config);
+        let mut record = Record::new(config, self.faidx.as_ref());
 
         while self
             .reader
@@ -88,16 +103,22 @@ impl<R: io::Read> Reader<R> {
                 _ => {}
             }
 
+            record.push(&content);
+
             buf.clear();
         }
 
+        global.validate();
         meta_information.validate();
         header.validate();
+        record.validate();
 
         ValidationReport {
             errors,
+            global,
             meta_information,
             header,
+            record,
         }
     }
 }

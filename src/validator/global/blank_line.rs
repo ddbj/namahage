@@ -26,7 +26,7 @@ impl Default for BlankLine {
     fn default() -> Self {
         Self {
             enabled: true,
-            level: Level::Error,
+            level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => String::from("Blank line found. This line will be ignored."),
                 Lang::JA => {
@@ -44,7 +44,6 @@ impl BlankLine {
         }
 
         if let Some(content) = &item.current_content {
-            println!("{:?}", content);
             if !content.1.is_empty() {
                 return None;
             }

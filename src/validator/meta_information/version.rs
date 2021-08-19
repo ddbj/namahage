@@ -29,7 +29,7 @@ impl Default for Version {
     fn default() -> Version {
         Version {
             enabled: true,
-            level: Level::Error,
+            level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => {
                     String::from("Unexpected VCF version. Expected values are {{allowed}}.")
@@ -74,7 +74,7 @@ impl Version {
         }
 
         let mut context = tera::Context::new();
-        context.insert("allowed", &self.allowed.join("/"));
+        context.insert("allowed", &self.allowed.join(", "));
 
         Some(ValidationError {
             id: Self::id(),

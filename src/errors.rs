@@ -24,6 +24,9 @@ pub enum Error {
     #[error(transparent)]
     TeraError(#[from] tera::Error),
 
+    #[error(transparent)]
+    RustHtslibError(#[from] rust_htslib::errors::Error),
+
     #[error("{0}")]
     FileNotFoundError(String),
 
@@ -32,4 +35,10 @@ pub enum Error {
 
     #[error("Invalid UTF-8 character at {0}")]
     VCFReadUtf8Error(Content),
+
+    #[error("Invalid UTF-8 character: {0}")]
+    FilePathError(String),
+
+    #[error("Failed to build faidx: {0}")]
+    FaidxBuildError(String),
 }

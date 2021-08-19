@@ -26,7 +26,7 @@ impl Default for DataBeforeHeader {
     fn default() -> Self {
         Self {
             enabled: true,
-            level: Level::Error,
+            level: Level::Warning,
             message: match Config::language() {
                 Lang::EN => {
                     String::from("Data line found before header line. This line will be ignored.")

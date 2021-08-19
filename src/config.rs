@@ -8,12 +8,9 @@ use serde_yaml::Value;
 use tera::Tera;
 
 use crate::errors::Result;
-use crate::validator::{global, header, meta_information};
+use crate::validator::{global, header, meta_information, record};
 
 const CONFIG_MESSAGE_KEY: &'static str = "Message";
-
-static LANG: OnceCell<Lang> = OnceCell::new();
-static TERA: OnceCell<Tera> = OnceCell::new();
 
 #[derive(Debug, Copy, Clone)]
 pub enum Lang {
@@ -61,7 +58,39 @@ pub struct Config {
     pub blank_line: global::blank_line::BlankLine,
     #[serde(rename = "Global/EmptyVCF")]
     pub empty_vcf: global::empty_vcf::EmptyVCF,
+
+    #[serde(rename = "Record/AllowedAlternateBase")]
+    pub allowed_alternate_base: record::allowed_alternate_base::AllowedAlternateBase,
+    #[serde(rename = "Record/AllowedReferenceBase")]
+    pub allowed_reference_base: record::allowed_reference_base::AllowedReferenceBase,
+    #[serde(rename = "Record/AmbiguousAlternateBase")]
+    pub ambiguous_alternate_base: record::ambiguous_alternate_base::AmbiguousAlternateBase,
+    #[serde(rename = "Record/AmbiguousReferenceBase")]
+    pub ambiguous_reference_base: record::ambiguous_reference_base::AmbiguousReferenceBase,
+    #[serde(rename = "Record/DeletionLength")]
+    pub deletion_length: record::deletion_length::DeletionLength,
+    #[serde(rename = "Record/DiscontiguousChromosome")]
+    pub discontiguous_chromosome: record::discontiguous_chromosome::DiscontiguousChromosome,
+    #[serde(rename = "Record/IdenticalBases")]
+    pub identical_bases: record::identical_bases::IdenticalBases,
+    #[serde(rename = "Record/InsertionLength")]
+    pub insertion_length: record::insertion_length::InsertionLength,
+    #[serde(rename = "Record/MismatchReferenceBase")]
+    pub mismatch_reference_base: record::mismatch_reference_base::MismatchReferenceBase,
+    #[serde(rename = "Record/MissingAlternateBase")]
+    pub missing_alternate_base: record::missing_alternate_base::MissingAlternateBase,
+    #[serde(rename = "Record/MissingReferenceBase")]
+    pub missing_reference_base: record::missing_reference_base::MissingReferenceBase,
+    #[serde(rename = "Record/MultipleAlternateAlleles")]
+    pub multiple_alternate_alleles: record::multiple_alternate_alleles::MultipleAlternateAlleles,
+    #[serde(rename = "Record/PositionFormat")]
+    pub position_format: record::position_format::PositionFormat,
+    #[serde(rename = "Record/UnsortedPosition")]
+    pub unsorted_position: record::unsorted_position::UnsortedPosition,
 }
+
+static LANG: OnceCell<Lang> = OnceCell::new();
+static TERA: OnceCell<Tera> = OnceCell::new();
 
 impl Config {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Config> {
@@ -111,19 +140,5 @@ impl Config {
         }
 
         tera
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_serialize() {
-        let config = Config::default();
-        let serialize = serde_yaml::to_string(&config);
-
-        assert!(serialize.is_ok());
-        eprintln!("{}", serialize.unwrap());
     }
 }
