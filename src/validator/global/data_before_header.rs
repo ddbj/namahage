@@ -68,7 +68,7 @@ impl DataBeforeHeader {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use crate::vcf::Content;
 
@@ -89,7 +89,7 @@ mod tests {
                 3,
                 "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO".to_owned(),
             )),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = DataBeforeHeader::default().validate(&item);
@@ -109,7 +109,7 @@ mod tests {
                 "NC_000001.10\t10001\trs1570391677\tT\tA\t.\t.\t.".to_owned(),
             )),
             previous_content: Some(Content(2, "##reference=GRCh37.p13".to_owned())),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = DataBeforeHeader::default().validate(&item);

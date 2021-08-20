@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::config::Config;
 use crate::validator::ValidationError;
@@ -16,7 +16,7 @@ pub struct Global<'a> {
     count: i64,
     current_content: Option<Content>,
     previous_content: Option<Content>,
-    errors: HashMap<Option<Content>, Vec<ValidationError>>,
+    pub errors: BTreeMap<Option<Content>, Vec<ValidationError>>,
 }
 
 impl<'a> Global<'a> {
@@ -28,7 +28,7 @@ impl<'a> Global<'a> {
             count: 0,
             current_content: None,
             previous_content: None,
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         }
     }
 

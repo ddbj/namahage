@@ -11,7 +11,7 @@ pub struct Header<'a> {
     config: &'a Config,
     validated: bool,
     contents: Vec<Content>,
-    errors: Vec<ValidationError>,
+    pub errors: Vec<ValidationError>,
 }
 
 impl<'a> Header<'a> {

@@ -10,7 +10,7 @@ pub struct MetaInformation<'a> {
     config: &'a Config,
     validated: bool,
     contents: Vec<Content>,
-    errors: Vec<ValidationError>,
+    pub errors: Vec<ValidationError>,
 }
 
 impl<'a> MetaInformation<'a> {

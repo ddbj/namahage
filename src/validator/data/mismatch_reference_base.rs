@@ -100,7 +100,7 @@ impl MismatchReferenceBase {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::{BTreeMap, HashSet};
 
     use super::*;
 
@@ -128,7 +128,7 @@ mod tests {
                 ".".to_owned(),
             ]),
             previous_record: None,
-            errors: HashMap::default(),
+            errors: BTreeMap::default(),
         };
 
         let v = MismatchReferenceBase::default().validate(&item);
@@ -152,7 +152,7 @@ mod tests {
                 ".".to_owned(),
             ]),
             previous_record: None,
-            errors: HashMap::default(),
+            errors: BTreeMap::default(),
         };
 
         let v = MismatchReferenceBase::default().validate(&item);
@@ -180,7 +180,7 @@ mod tests {
                 ".".to_owned(),
             ]),
             previous_record: None,
-            errors: HashMap::default(),
+            errors: BTreeMap::default(),
         };
 
         let v = MismatchReferenceBase::default().validate(&item);

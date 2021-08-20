@@ -75,7 +75,7 @@ impl UnsortedPosition {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::{BTreeMap, HashSet};
 
     use super::*;
 
@@ -107,7 +107,7 @@ mod tests {
                 ".".to_owned(),
                 ".".to_owned(),
             ]),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = UnsortedPosition::default().validate(&item);
@@ -134,7 +134,7 @@ mod tests {
                 ".".to_owned(),
             ]),
             previous_record: None,
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = UnsortedPosition::default().validate(&item);
@@ -170,7 +170,7 @@ mod tests {
                 ".".to_owned(),
                 ".".to_owned(),
             ]),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = UnsortedPosition::default().validate(&item);

@@ -31,9 +31,9 @@ pub struct Options {
     #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
-    /// Path to faidx file
-    #[structopt(long, parse(from_os_str))]
-    faidx: Option<PathBuf>,
+    /// Path to fasta file
+    #[structopt(short, long, parse(from_os_str))]
+    fasta: Option<PathBuf>,
 
     /// File to process
     #[structopt(parse(from_os_str))]
@@ -59,7 +59,7 @@ fn main() -> Result<()> {
     if let Some(path) = &opts.input {
         let mut reader = Reader::from_path(path)?;
 
-        if let Some(faidx) = opts.faidx {
+        if let Some(faidx) = opts.fasta {
             reader.set_faidx(faidx)?;
         }
 

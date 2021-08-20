@@ -58,7 +58,7 @@ impl EmptyVCF {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use super::*;
 
@@ -71,7 +71,7 @@ mod tests {
             count: 1,
             current_content: None,
             previous_content: None,
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = EmptyVCF::default().validate(&item);
@@ -88,7 +88,7 @@ mod tests {
             count: 0,
             current_content: None,
             previous_content: None,
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = EmptyVCF::default().validate(&item);

@@ -1,6 +1,9 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::errors::Error;
+use crate::vcf::Content;
 
 pub mod data;
 pub mod global;
@@ -34,10 +37,10 @@ pub struct ValidationError {
 }
 
 #[derive(Debug)]
-pub struct ValidationReport<'a> {
+pub struct ValidationReport {
     pub errors: Vec<Error>,
-    pub global: global::Global<'a>,
-    pub meta_information: meta_information::MetaInformation<'a>,
-    pub header: header::Header<'a>,
-    pub record: data::Data<'a>,
+    pub global: BTreeMap<Option<Content>, Vec<ValidationError>>,
+    pub meta_information: Vec<ValidationError>,
+    pub header: Vec<ValidationError>,
+    pub record: BTreeMap<Option<Content>, Vec<ValidationError>>,
 }

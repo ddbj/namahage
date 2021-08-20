@@ -62,7 +62,7 @@ impl BlankLine {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use crate::vcf::Content;
 
@@ -83,7 +83,7 @@ mod tests {
                 3,
                 "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO".to_owned(),
             )),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = BlankLine::default().validate(&item);
@@ -103,7 +103,7 @@ mod tests {
                 3,
                 "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO".to_owned(),
             )),
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         };
 
         let v = BlankLine::default().validate(&item);

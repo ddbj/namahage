@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use regex::Regex;
 
@@ -30,7 +30,7 @@ pub struct Data<'a> {
     chromosomes: HashSet<String>,
     current_record: Option<Vec<String>>,
     previous_record: Option<Vec<String>>,
-    errors: HashMap<Option<Content>, Vec<ValidationError>>,
+    pub errors: BTreeMap<Option<Content>, Vec<ValidationError>>,
 }
 
 fn regex_nucleotide() -> Regex {
@@ -47,7 +47,7 @@ impl<'a> Data<'a> {
             chromosomes: HashSet::new(),
             current_record: None,
             previous_record: None,
-            errors: HashMap::new(),
+            errors: BTreeMap::new(),
         }
     }
 

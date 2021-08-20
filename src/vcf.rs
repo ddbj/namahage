@@ -13,6 +13,7 @@ use crate::validator::global::Global;
 use crate::validator::header::Header;
 use crate::validator::meta_information::MetaInformation;
 use crate::validator::ValidationReport;
+use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub struct Reader<R> {
@@ -36,6 +37,18 @@ const CAPACITY: usize = 10 * 1024;
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Content(pub usize, pub String);
+
+impl PartialOrd<Self> for Content {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.0.cmp(&other.0))
+    }
+}
+
+impl Ord for Content {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
 
 impl Display for Content {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -64,7 +77,7 @@ impl<R: io::Read> Reader<R> {
         self.faidx.as_ref()
     }
 
-    pub fn validate<'a>(&'a mut self, config: &'a Config) -> ValidationReport<'a> {
+    pub fn validate<'a>(&'a mut self, config: &'a Config) -> ValidationReport {
         let mut i = 0;
         let mut buf = Vec::with_capacity(CAPACITY);
 
@@ -115,10 +128,10 @@ impl<R: io::Read> Reader<R> {
 
         ValidationReport {
             errors,
-            global,
-            meta_information,
-            header,
-            record,
+            global: global.errors,
+            meta_information: meta_information.errors,
+            header: header.errors,
+            record: record.errors,
         }
     }
 }
