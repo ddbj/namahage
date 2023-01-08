@@ -16,7 +16,7 @@ pub enum ReportType {
     TSV,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt)]
 #[structopt(about = crate_description!())]
 pub struct Options {
     /// Output format

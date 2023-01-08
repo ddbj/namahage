@@ -28,6 +28,9 @@ pub enum Error {
     RustHtslibError(#[from] rust_htslib::errors::Error),
 
     #[error("{0}")]
+    UnknownExtensionError(String),
+
+    #[error("{0}")]
     FileNotFoundError(String),
 
     #[error("{0}")]
